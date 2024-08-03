@@ -21,4 +21,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "FinanceControl"
 include(":app")
- 
+include(":features:finance")
+include(":core:ui")
+include(":core:database")
+include(":core:data")
+include(":core:models")
+include(":features:add")
+include(":features:money")
