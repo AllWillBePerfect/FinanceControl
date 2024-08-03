@@ -5,16 +5,19 @@ import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.example.finance.adapter.models.BudgetUi
 import com.example.finance.adapter.BudgetUiDiffUtilCallBack
 import com.example.finance.adapter.item_delegate.DateItemDelegate
 import com.example.finance.adapter.item_delegate.SpendingItemDelegate
 import com.example.finance.adapter.BudgetUiItemDecoration
+import com.example.finance.adapter.swipe.SwipeCallback
 import com.example.finance.databinding.FragmentFinanceBinding
 import com.example.finance.viewmodel.FinanceViewModel
 import com.example.ui.BaseFragment
 import com.example.ui.TextFormater
 import com.example.ui.adapter.UniversalRecyclerViewAdapter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -36,10 +39,6 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
         binding.addButton.setOnClickListener { navigator.launchAddDialogFragment() }
         binding.money.setOnClickListener { navigator.launchChangeMoneyDialogFragment() }
 
-//        val sum = 24532.59
-//        val refactoredSum = TextFormater.formatMoney(sum)
-//        binding.money.text = refactoredSum
-
     }
 
 
@@ -47,7 +46,7 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
         adapter = UniversalRecyclerViewAdapter(
             delegates = listOf(
                 SpendingItemDelegate(
-                    onItemClickListener = viewmodel::deleteRecord,
+                    onItemClickListener = {},
                     cornersDrawable = SpendingItemDelegate.CornersDirectionsContainer(
                         topCornersDrawable = ContextCompat.getDrawable(
                             requireContext(),
@@ -77,20 +76,36 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
 
         binding.recyclerView.adapter = adapter
         binding.recyclerView.addItemDecoration(BudgetUiItemDecoration())
+
+        val itemTouchHelper =
+            ItemTouchHelper(SwipeCallback(adapter, requireContext(), this::deleteRecord))
+
+        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
+
+    }
+
+    private fun deleteRecord(deleteId: Long) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Удалить запись")
+            .setPositiveButton("Удалить") { _, _ ->
+                viewmodel.deleteRecord(deleteId)
+            }
+            .setNeutralButton("Отмена") { _, _ ->
+            }
+            .show()
     }
 
     private fun setupLiveData() {
 
-        viewmodel.observeSuccessMoneyTotalLiveData(viewLifecycleOwner) {moneyTotal ->
+        viewmodel.observeSuccessMoneyTotalLiveData(viewLifecycleOwner) { moneyTotal ->
             binding.money.text = TextFormater.formatMoney(moneyTotal.value)
         }
 
-        viewmodel.observeLoadingMoneyTotalLiveData(viewLifecycleOwner) {isLoading ->
+        viewmodel.observeLoadingMoneyTotalLiveData(viewLifecycleOwner) { isLoading ->
             if (isLoading) {
                 binding.money.visibility = View.GONE
                 binding.moneyTotalProgressIndicator.visibility = View.VISIBLE
-            }
-            else {
+            } else {
                 binding.moneyTotalProgressIndicator.visibility = View.GONE
                 binding.money.visibility = View.VISIBLE
             }
