@@ -59,5 +59,6 @@
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_margin="16dp"/>
+        android:layout_margin="16dp"
+        android:src="@drawable/add_24dp_e8eaed_fill0_wght400_grad0_opsz24"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
