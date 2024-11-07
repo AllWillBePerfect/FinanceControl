@@ -66,6 +66,8 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     annotationProcessor(libs.androidx.hilt.compiler)
 
+    implementation ("com.github.Dimezis:BlurView:version-2.0.5")
+
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(project(":core:models"))

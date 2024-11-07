@@ -136,6 +136,8 @@ dependencies {
 
     implementation(libs.timber)
 
+    implementation ("com.github.Dimezis:BlurView:version-2.0.5")
+
     implementation(project(":core:models"))
     implementation(project(":core:database"))
     implementation(project(":core:data"))

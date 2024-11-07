@@ -2,11 +2,20 @@ package com.example.finance
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import android.util.TypedValue
 import android.view.View
 import android.widget.Toast
@@ -28,6 +37,7 @@ import com.example.ui.TextFormater
 import com.example.ui.adapter.UniversalRecyclerViewAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import eightbitlab.com.blurview.RenderScriptBlur
 import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
@@ -53,13 +63,45 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
 
         val colorInt = requireContext().themeColor(com.google.android.material.R.attr.colorPrimary)
 
-        val gradientNoiseBitmap = generateGradientNoise(1080, 1920, intColor = colorInt)
+        /*val gradientNoiseBitmap = generateGradientNoise(1080, 1920, intColor = colorInt)
         val drawable = BitmapDrawable(resources, gradientNoiseBitmap)
 //        requireActivity().window.decorView.background = drawable
-        binding.background.background = drawable
+        binding.background.background = drawable*/
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            val originalBitmap = BitmapFactory.decodeResource(resources, com.example.ui.R.drawable.city)
+//            binding.background.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+//            binding.background.background = BitmapDrawable(resources, originalBitmap)
+//            binding.background.setRenderEffect(RenderEffect.createBlurEffect(25f, 25f, Shader.TileMode.CLAMP))
+//        } else {
+        val originalBitmap = BitmapFactory.decodeResource(resources, com.example.ui.R.drawable.city)
+//        val blurredBitmap =
+//            blurBitmap(requireContext(), originalBitmap, 25f) // 25f - радиус размытия
+        binding.background.background = BitmapDrawable(resources, originalBitmap)
+
+//        }
+
+        sds()
 
     }
 
+    fun sds() {
+        val radius = 25f
+
+        val decorView = requireActivity().window.decorView;
+        // ViewGroup you want to start blur from. Choose root as close to BlurView in hierarchy as possible.
+        val rootView = binding.background;
+
+        // Optional:
+        // Set drawable to draw in the beginning of each blurred frame.
+        // Can be used in case your layout has a lot of transparent space and your content
+        // gets a too low alpha value after blur is applied.
+        val windowBackground = decorView.background;
+
+        binding.blurView.setupWith(rootView, RenderScriptBlur(requireContext())) // or RenderEffectBlur
+//            .setFrameClearDrawable(windowBackground) // Optional
+            .setBlurRadius(radius)
+    }
 
     private fun setupAdapter() {
         adapter = UniversalRecyclerViewAdapter(
@@ -176,7 +218,6 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
         }
 
 
-
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint()
@@ -224,4 +265,23 @@ class FinanceFragment : BaseFragment<FragmentFinanceBinding>(FragmentFinanceBind
     fun Context.themeColor(@AttrRes attrRes: Int): Int = TypedValue()
         .apply { theme.resolveAttribute(attrRes, this, true) }
         .data
+
+
+    fun getBitmapFromResource(context: Context, resId: Int): Bitmap {
+        return BitmapFactory.decodeResource(context.resources, resId)
+    }
+
+    fun blurBitmap(context: Context, bitmap: Bitmap, radius: Float): Bitmap {
+        val outputBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        val rs = RenderScript.create(context)
+        val input = Allocation.createFromBitmap(rs, bitmap)
+        val output = Allocation.createFromBitmap(rs, outputBitmap)
+        val script = ScriptIntrinsicBlur.create(rs, android.renderscript.Element.U8_4(rs))
+        script.setRadius(radius)
+        script.setInput(input)
+        script.forEach(output)
+        output.copyTo(outputBitmap)
+        rs.destroy()
+        return outputBitmap
+    }
 }
